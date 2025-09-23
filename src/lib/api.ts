@@ -41,21 +41,26 @@ export async function getHealth(): Promise<string> {
 }
 
 export async function getLines(cityId?: number): Promise<BusLine[]> {
-  if (cityId) {
-    const url = `${BASE_URL}/station/lines?city_id=${cityId}`;
-    console.log(`[API_CLIENT] Fetching lines from ${url}`);
-    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
-    return handleResponse<BusLine[]>(response);
-  } else {
-    // Fetch from all cities and merge
-    console.log(`[API_CLIENT] Fetching lines from all cities`);
-    const promises = CITIES.map(city => {
-        const url = `${BASE_URL}/station/lines?city_id=${city.id}`;
-        return fetch(url, { next: { revalidate: 3600 } }).then(res => handleResponse<BusLine[]>(res));
-    });
-    const results = await Promise.all(promises);
-    return results.flat();
-  }
+    if (cityId) {
+      const url = `${BASE_URL}/station/lines?city_id=${cityId}`;
+      console.log(`[API_CLIENT] Fetching lines from ${url}`);
+      const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
+      try {
+        return await handleResponse<BusLine[]>(response);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 400) {
+            console.warn(`[API_CLIENT] Fetching lines for city ${cityId} failed, assuming no lines.`);
+            return [];
+        }
+        throw e;
+      }
+    } else {
+      // Fetch from all cities and merge
+      console.log(`[API_CLIENT] Fetching lines from all cities`);
+      const promises = CITIES.map(city => getLines(city.id));
+      const results = await Promise.all(promises);
+      return results.flat();
+    }
 }
 
 
@@ -112,22 +117,53 @@ export interface GetItineraryParams {
 }
 
 export async function getItinerary(params: GetItineraryParams): Promise<ItineraryResponse> {
-  const query = new URLSearchParams({
+  const v1Params = {
     dest_add: params.dest_add,
     city_id: params.city_id.toString(),
     ...(params.start_add && { start_add: params.start_add }),
     ...(params.start_lat && { start_lat: params.start_lat.toString() }),
     ...(params.start_lon && { start_lon: params.start_lon.toString() }),
-  });
+  };
   
-  const url = `${BASE_URL}/itinerary/routes?${query.toString()}`;
-  console.log(`[API_CLIENT] Fetching itinerary from ${url}`);
+  const v1Query = new URLSearchParams(v1Params);
+  const v1Url = `${BASE_URL}/itinerary/routes?${v1Query.toString()}`;
+  
+  console.log(`[API_CLIENT] Fetching itinerary from v1: ${v1Url}`);
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`[API_CLIENT] Error fetching itinerary from ${url}:`, response.status, errorBody);
-    throw new Error(`Failed to fetch: ${response.status} ${errorBody}`);
+  try {
+    const v1Response = await fetch(v1Url);
+    if (!v1Response.ok) {
+        // Don't throw here, just log and proceed to v2
+        console.error(`[API_CLIENT] V1 request failed with status ${v1Response.status}. Proceeding to v2.`);
+    } else {
+        const v1Data = await handleResponse<ItineraryResponse>(v1Response);
+        if (v1Data.count > 0) {
+          console.log('[API_CLIENT] V1 returned results, using them.');
+          return v1Data;
+        }
+        console.log('[API_CLIENT] V1 returned no results, trying v2.');
+    }
+  } catch (error) {
+    console.error('[API_CLIENT] Error fetching from V1, proceeding to v2:', error);
   }
-  return handleResponse<ItineraryResponse>(response);
+
+  // Fallback to v2
+  const v2Params = {
+    dest_add: params.dest_add,
+    ...(params.start_lat && { start_lat: params.start_lat.toString() }),
+    ...(params.start_lon && { start_lon: params.start_lon.toString() }),
+  };
+
+  const v2Query = new URLSearchParams(v2Params);
+  const v2Url = `${BASE_URL}/itinerary/v2/routes?${v2Query.toString()}`;
+
+  console.log(`[API_CLIENT] Fetching itinerary from v2: ${v2Url}`);
+
+  const v2Response = await fetch(v2Url);
+  if (!v2Response.ok) {
+    const errorBody = await v2Response.text();
+    console.error(`[API_CLIENT] Error fetching itinerary from v2 ${v2Url}:`, v2Response.status, errorBody);
+    throw new Error(`Failed to fetch from v2: ${v2Response.status} ${errorBody}`);
+  }
+  return handleResponse<ItineraryResponse>(v2Response);
 }
