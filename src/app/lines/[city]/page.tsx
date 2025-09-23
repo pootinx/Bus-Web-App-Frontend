@@ -3,6 +3,7 @@ import type { BusLine } from '@/lib/types';
 import { LineCard } from '@/components/LineCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Frown } from 'lucide-react';
+import { CITIES } from '@/lib/constants';
 
 type LinesByCityPageProps = {
   params: {
@@ -10,32 +11,24 @@ type LinesByCityPageProps = {
   };
 };
 
-// Basic logic to filter lines by city from address strings.
-// This is a placeholder until a proper city API or filter is available.
-function filterLinesByCity(lines: BusLine[], city: string): BusLine[] {
-  const normalizedCity = city.toLowerCase();
-  return lines.filter(
-    (line) =>
-      line.start_address.toLowerCase().includes(normalizedCity) ||
-      line.end_address.toLowerCase().includes(normalizedCity) ||
-      (normalizedCity === 'casablanca' && line.end_address.toLowerCase().includes('casa'))
-  );
-}
-
 export default async function LinesByCityPage({ params }: LinesByCityPageProps) {
   const { city } = params;
   const capitalizedCity = city.charAt(0).toUpperCase() + city.slice(1);
+  const cityInfo = CITIES.find(c => c.name.toLowerCase() === city.toLowerCase());
   
-  let allLines: BusLine[] = [];
+  let lines: BusLine[] = [];
   let error: string | null = null;
   
-  try {
-    allLines = await getLines();
-  } catch (e) {
-    error = e instanceof Error ? e.message : 'Failed to fetch bus lines.';
+  if (!cityInfo) {
+    error = `La ville "${capitalizedCity}" n'est pas supportée.`;
+  } else {
+    try {
+      lines = await getLines(cityInfo.id);
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Failed to fetch bus lines.';
+    }
   }
 
-  const filteredLines = error ? [] : filterLinesByCity(allLines, city);
 
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
@@ -48,7 +41,7 @@ export default async function LinesByCityPage({ params }: LinesByCityPageProps) 
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      {!error && filteredLines.length === 0 && (
+      {!error && lines.length === 0 && (
          <Alert>
             <Frown className="h-4 w-4" />
            <AlertTitle>Aucune ligne trouvée</AlertTitle>
@@ -56,7 +49,7 @@ export default async function LinesByCityPage({ params }: LinesByCityPageProps) 
          </Alert>
       )}
       <div className="grid gap-6 sm:grid-cols-1">
-        {filteredLines.map((line) => (
+        {lines.map((line) => (
           <LineCard key={line.id} line={line} />
         ))}
       </div>
@@ -65,6 +58,5 @@ export default async function LinesByCityPage({ params }: LinesByCityPageProps) 
 }
 
 export async function generateStaticParams() {
-    // This could be replaced with an API call to get all cities
-    return [{ city: 'casablanca' }, { city: 'tetouane' }];
+    return CITIES.map(city => ({ city: city.name.toLowerCase() }));
 }

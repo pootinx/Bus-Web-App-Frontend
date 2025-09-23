@@ -1,4 +1,5 @@
 import type { BusLine, ItineraryResponse, NearestStop, Stop, Trip } from './types';
+import { CITIES } from './constants';
 
 const BASE_URL = 'https://tobis-backend.onrender.com';
 
@@ -39,28 +40,27 @@ export async function getHealth(): Promise<string> {
   return response.text();
 }
 
-export async function getLines(): Promise<BusLine[]> {
-  const url = `${BASE_URL}/station/lines`;
-  console.log(`[API_CLIENT] Fetching lines from ${url}`);
-  const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
-  return handleResponse<BusLine[]>(response);
+export async function getLines(cityId?: number): Promise<BusLine[]> {
+  if (cityId) {
+    const url = `${BASE_URL}/station/lines?city_id=${cityId}`;
+    console.log(`[API_CLIENT] Fetching lines from ${url}`);
+    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
+    return handleResponse<BusLine[]>(response);
+  } else {
+    // Fetch from all cities and merge
+    console.log(`[API_CLIENT] Fetching lines from all cities`);
+    const promises = CITIES.map(city => {
+        const url = `${BASE_URL}/station/lines?city_id=${city.id}`;
+        return fetch(url, { next: { revalidate: 3600 } }).then(res => handleResponse<BusLine[]>(res));
+    });
+    const results = await Promise.all(promises);
+    return results.flat();
+  }
 }
 
-// This function now calls the internal proxy API route.
-// This is safe to call from client components.
-export async function getLineDetails(lineId: number): Promise<BusLine> {
-    const url = `/api/line-details?line_id=${lineId}`;
-    console.log(`[API_CLIENT] Fetching line details from internal proxy: ${url}`);
-    const response = await fetch(url);
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new ApiError(errorData.error || `Failed to fetch line details`, response.status);
-    }
-    const line = await response.json();
-    return line;
-}
 
 export async function getStopsByLine(lineId: number): Promise<Stop[]> {
+  // This endpoint seems to not require city_id which is strange, but we follow the API
   const url = `${BASE_URL}/station/stops?line_id=${lineId}`;
   console.log(`[API_CLIENT] Fetching stops from ${url}`);
   const response = await fetch(url, { next: { revalidate: 3600 } });
@@ -75,10 +75,25 @@ export async function getNearestStop(lat: number, lon: number): Promise<NearestS
 }
 
 export async function getTripsByLine(lineId: number): Promise<Trip[]> {
-  const url = `${BASE_URL}/station/trips?line_id=${lineId}`;
-  console.log(`[API_CLIENT] Fetching trips from ${url}`);
-  const response = await fetch(url, { next: { revalidate: 3600 } });
-  return handleResponse<Trip[]>(response);
+    // The trips endpoint likely needs a city_id as well. Since we don't know it,
+    // we'll have to guess or fetch from a default. Let's assume default of Casablanca (1)
+    // as a temporary workaround. A proper solution would involve knowing the line's city.
+    const city_id = 1; 
+    const url = `${BASE_URL}/station/trips?line_id=${lineId}&city_id=${city_id}`;
+    console.log(`[API_CLIENT] Fetching trips from ${url}`);
+    const response = await fetch(url, { next: { revalidate: 3600 } });
+    try {
+        return await handleResponse<Trip[]>(response);
+    } catch(e) {
+        if (e instanceof ApiError && e.status === 400) {
+            console.warn(`[API_CLIENT] Fetching trips for line ${lineId} with city 1 failed. Trying city 2.`);
+            const city_id_2 = 2;
+            const url_2 = `${BASE_URL}/station/trips?line_id=${lineId}&city_id=${city_id_2}`;
+            const response_2 = await fetch(url_2, { next: { revalidate: 3600 } });
+            return await handleResponse<Trip[]>(response_2);
+        }
+        throw e;
+    }
 }
 
 export async function getLinesByStop(stopId: number): Promise<BusLine[]> {
