@@ -47,15 +47,17 @@ export async function getLines(): Promise<BusLine[]> {
   return handleResponse<BusLine[]>(response);
 }
 
+// This function now calls the internal proxy API
 export async function getLineDetails(lineId: number): Promise<BusLine> {
-    const url = `${BASE_URL}/station/line-details?line_id=${lineId}`;
-    console.log(`[API_CLIENT] Fetching line details from ${url}`);
-    const response = await fetch(url, { next: { revalidate: 3600 } });
-    const lines = await handleResponse<BusLine[]>(response);
-    if (!lines || lines.length === 0) {
+    const url = `/api/line-details?line_id=${lineId}`;
+    console.log(`[API_CLIENT] Fetching line details via proxy from ${url}`);
+    const response = await fetch(url);
+    // The proxy will return a single object, not an array
+    const line = await handleResponse<BusLine>(response);
+    if (!line) {
         throw new ApiError(`Line with ID ${lineId} not found`, 404);
     }
-    return lines[0];
+    return line;
 }
 
 export async function getStopsByLine(lineId: number): Promise<Stop[]> {
