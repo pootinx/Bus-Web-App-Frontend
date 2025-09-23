@@ -8,7 +8,7 @@ type ItineraryTimelineProps = {
     itinerary: ItineraryV2;
 };
 
-const TimelineIcon = ({ type, lineId, isFirstOrLast }: { type: ItineraryStep['type'] | 'START' | 'END', lineId?: number, isFirstOrLast: boolean }) => {
+const TimelineIcon = ({ type, lineId }: { type: ItineraryStep['type'] | 'START' | 'END', lineId?: number }) => {
     const iconWrapperClass = "absolute left-0 -translate-x-1/2 z-10 p-1 bg-background rounded-full";
     const color = type === 'TRANSIT' && lineId ? getLineColor(lineId) : 'hsl(var(--primary))';
 
@@ -48,13 +48,13 @@ const TimelineItem = ({ step, isLast, isFirst }: { step: ItineraryStep, isLast: 
             {!isLast && (
                 <div 
                     className="absolute left-[3.5px] top-[calc(1.5rem+8px)] h-full w-1"
-                    style={{ backgroundColor: step.type === 'TRANSIT' ? color : 'hsl(var(--border))' }}
+                    style={{ backgroundColor: step.type === 'TRANSIT' && step.line_id ? getLineColor(step.line_id) : 'hsl(var(--border))' }}
                 ></div>
              )}
 
             {/* Start point of the step */}
             <div className="flex items-center mb-1">
-                <TimelineIcon type={isFirst ? 'START' : step.type} lineId={step.line_id} isFirstOrLast={isFirst || isLast} />
+                <TimelineIcon type={isFirst ? 'START' : step.type} lineId={step.line_id} />
                 <p className="font-semibold text-sm">{step.start_time}</p>
                 <p className="ml-4 font-bold">{step.start_stop_name}</p>
             </div>
@@ -99,7 +99,7 @@ export default function ItineraryTimeline({ itinerary }: ItineraryTimelineProps)
                  {/* Final Destination */}
                 <div className="relative pl-8 py-3">
                     <div className="flex items-center">
-                        <TimelineIcon type="END" isFirstOrLast={true}/>
+                        <TimelineIcon type="END"/>
                         <p className="font-semibold text-sm">{lastStep.end_time}</p>
                         <p className="ml-4 font-bold">{lastStep.end_stop_name}</p>
                     </div>

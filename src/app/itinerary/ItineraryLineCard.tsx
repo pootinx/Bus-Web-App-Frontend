@@ -36,8 +36,8 @@ export default function ItineraryLineCard({ itinerary }: ItineraryLineCardProps)
                            <div key={index} className="flex items-center gap-2">
                              <Badge 
                                 key={step.line_id}
-                                style={{ backgroundColor: getLineColor(step.line_id), color: 'white' }}
-                                className="text-xs"
+                                style={{ backgroundColor: getLineColor(step.line_id!), color: 'white' }}
+                                className="text-xs font-bold"
                              >
                                {step.line_name}
                              </Badge>
