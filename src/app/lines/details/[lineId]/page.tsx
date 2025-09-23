@@ -1,10 +1,9 @@
 
 import { getLineColor } from '@/lib/constants';
-import { getLines, getStopsByLine, getItinerary } from '@/lib/api';
+import { getLines, getStopsByLine } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MapProvider } from '../MapProvider';
-import ItineraryTimeline from '@/app/itinerary/ItineraryTimeline';
-import type { ItineraryV2 } from '@/lib/types';
+import { LineDetails } from '../LineDetails';
 
 type LineDetailsPageProps = {
   params: {
@@ -12,36 +11,39 @@ type LineDetailsPageProps = {
   };
 };
 
-// This page is now repurposed to show a detailed itinerary view
-export default async function ItineraryDetailsPage({ params }: LineDetailsPageProps) {
+export default async function LineDetailsPage({ params }: LineDetailsPageProps) {
+  const lineId = parseInt(params.lineId, 10);
   
-  // We'll fetch a mock itinerary to build the UI, as the lineId doesn't directly map to a multi-leg itinerary.
-  // This is a temporary measure to build the UI as requested.
+  if (isNaN(lineId)) {
+    return (
+        <div className="container py-8">
+            <Alert variant="destructive">
+                <AlertTitle>ID de ligne invalide</AlertTitle>
+                <AlertDescription>L'ID de la ligne fourni n'est pas un nombre.</AlertDescription>
+            </Alert>
+        </div>
+    );
+  }
+
   try {
-    const itineraryResponse = await getItinerary({
-        start_lat: 33.5358,
-        start_lon: -7.6435,
-        dest_add: 'Casa Voyageurs',
-        city_id: 1, // Casablanca
-    });
-
-    const itinerary: ItineraryV2 | undefined = itineraryResponse.v2_itin?.[0];
-
-    if (!itinerary) {
-      throw new Error('No V2 itinerary found for mocking the details page.');
-    }
+    const allLines = await getLines();
+    const line = allLines.find(l => l.id === lineId);
     
-    // We need to associate a line color with each step, we'll use a placeholder logic
-    const color = getLineColor(parseInt(params.lineId, 10));
+    if (!line) {
+      throw new Error(`Aucune ligne trouvée avec l'ID ${lineId}`);
+    }
+
+    const stops = await getStopsByLine(lineId);
+    const color = getLineColor(lineId);
 
     return (
       <div style={{ '--line-color': color } as React.CSSProperties} className="h-[calc(100vh-4rem)]">
         <div className="flex flex-col md:flex-row h-full">
-            <div className="md:w-1/3 lg:w-1/4 h-full border-r overflow-y-auto">
-                <ItineraryTimeline itinerary={itinerary} />
+            <div className="md:w-1/3 lg:w-1/4 h-full overflow-y-auto border-r">
+                <LineDetails line={line} stops={stops} />
             </div>
             <div className="flex-1 h-full">
-                 <MapProvider line={{id: parseInt(params.lineId, 10), polyline: itinerary.steps.map(s => s.polyline).join('')} as any} stops={[]} />
+                 <MapProvider line={line} stops={stops} />
             </div>
         </div>
       </div>
@@ -50,7 +52,7 @@ export default async function ItineraryDetailsPage({ params }: LineDetailsPagePr
     return (
       <div className="container py-8">
         <Alert variant="destructive">
-          <AlertTitle>Erreur de chargement de l'itinéraire</AlertTitle>
+          <AlertTitle>Erreur de chargement des détails de la ligne</AlertTitle>
           <AlertDescription>{error instanceof Error ? error.message : 'Une erreur est survenue.'}</AlertDescription>
         </Alert>
       </div>
@@ -60,7 +62,9 @@ export default async function ItineraryDetailsPage({ params }: LineDetailsPagePr
 
 export async function generateStaticParams() {
   try {
-    const lines = await getLines(1); // Default to Casablanca for static generation
+    // We generate for both Casablanca and Tetouane
+    const [casablancaLines, tetouaneLines] = await Promise.all([getLines(1), getLines(2)]);
+    const lines = [...casablancaLines, ...tetouaneLines];
     return lines.map((line) => ({
       lineId: line.id.toString(),
     }));

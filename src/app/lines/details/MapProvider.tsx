@@ -3,15 +3,16 @@
 
 import { APIProvider, Map } from '@vis.gl/react-google-maps';
 import LineMap from './LineMap';
-import type { BusLine, Stop } from '@/lib/types';
+import type { BusLine, Stop, ItineraryV2 } from '@/lib/types';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 
 type MapProviderProps = {
-  line: BusLine;
-  stops: Stop[];
+  line?: BusLine;
+  stops?: Stop[];
+  itinerary?: ItineraryV2;
 };
 
-export function MapProvider({ line, stops }: MapProviderProps) {
+export function MapProvider({ line, stops, itinerary }: MapProviderProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || 'transitsage-map';
 
@@ -24,6 +25,8 @@ export function MapProvider({ line, stops }: MapProviderProps) {
       </div>
     );
   }
+  
+  const hasData = line || itinerary;
 
   return (
     <APIProvider apiKey={apiKey}>
@@ -35,7 +38,7 @@ export function MapProvider({ line, stops }: MapProviderProps) {
             gestureHandling={'greedy'}
             disableDefaultUI={true}
         >
-            <LineMap line={line} stops={stops} />
+           {hasData && <LineMap line={line} stops={stops} itinerary={itinerary}/>}
         </Map>
     </APIProvider>
   );
