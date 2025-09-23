@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const apiUrl = `${BASE_URL}/station/line-details?line_id=${lineId}`;
+    const apiUrl = `${BASE_URL}/itinerary/line-details?line_id=${lineId}`;
     console.log('[API_LINE_DETAILS_PROXY] Fetching from external API:', apiUrl);
     
     const response = await fetch(apiUrl, { next: { revalidate: 3600 } }); // Cache for 1 hour
