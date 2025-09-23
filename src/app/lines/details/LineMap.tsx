@@ -1,14 +1,12 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { Map, useMap } from '@vis.gl/react-google-maps';
+import { useEffect, useMemo } from 'react';
+import { useMap } from '@vis.gl/react-google-maps';
 import type { BusLine, Stop } from '@/lib/types';
 import { decode } from '@/lib/polyline';
 import { getLineColor } from '@/lib/constants';
 
-// The Polyline and Marker components are not direct exports, they are part of the google.maps object
-// We will render it dynamically when the map is available.
 declare global {
     interface Window {
         google: any;
@@ -18,11 +16,12 @@ declare global {
 function MapController({ path, stops }: { path: {lat: number, lng: number}[]; stops: Stop[] }) {
   const map = useMap();
 
-  useMemo(() => {
-    if (map && window.google && path.length > 0) {
+  useEffect(() => {
+    if (map && window.google && (path.length > 0 || stops.length > 0)) {
       const bounds = new window.google.maps.LatLngBounds();
       path.forEach(pos => bounds.extend(pos));
       stops.forEach(stop => bounds.extend({ lat: stop.lat, lng: stop.lon }));
+      if (bounds.isEmpty()) return;
       map.fitBounds(bounds, 100);
     }
   }, [map, path, stops]);
@@ -44,37 +43,50 @@ export default function LineMap({ line, stops }: LineMapProps) {
 
   const color = getLineColor(line.id);
 
+  useEffect(() => {
+    if (!map || !window.google || path.length === 0) return;
+
+    const polyline = new window.google.maps.Polyline({
+        path: path,
+        strokeColor: color,
+        strokeOpacity: 0.8,
+        strokeWeight: 5,
+        map: map,
+    });
+
+    return () => {
+        polyline.setMap(null);
+    };
+  }, [map, path, color]);
+
+  useEffect(() => {
+      if (!map || !window.google) return;
+      
+      const markers = stops.map((stop, index) => {
+          return new window.google.maps.Marker({
+              position: { lat: stop.lat, lng: stop.lon },
+              map: map,
+              title: stop.name,
+              icon: {
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: (index === 0 || index === stops.length - 1) ? 6 : 4,
+                  fillColor: (index === 0) ? '#10B981' : (index === stops.length - 1) ? '#EF4444' : '#FFFFFF',
+                  fillOpacity: 1,
+                  strokeColor: color,
+                  strokeWeight: 2,
+              },
+          });
+      });
+
+      return () => {
+          markers.forEach(marker => marker.setMap(null));
+      };
+
+  }, [map, stops, color]);
+
+
   return (
     <>
-      {map && window.google && (
-        <>
-          {path.length > 0 && (
-            <window.google.maps.Polyline
-              map={map}
-              path={path}
-              strokeColor={color}
-              strokeOpacity={0.8}
-              strokeWeight={5}
-            />
-          )}
-          {stops.map((stop, index) => (
-            <window.google.maps.Marker
-              key={stop.id}
-              position={{ lat: stop.lat, lng: stop.lon }}
-              map={map}
-              title={stop.name}
-              icon={{
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: (index === 0 || index === stops.length - 1) ? 6 : 4,
-                fillColor: (index === 0) ? '#10B981' : (index === stops.length - 1) ? '#EF4444' : '#FFFFFF',
-                fillOpacity: 1,
-                strokeColor: color,
-                strokeWeight: 2,
-              }}
-            />
-          ))}
-        </>
-      )}
       <MapController path={path} stops={stops} />
     </>
   );
