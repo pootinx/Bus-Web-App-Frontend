@@ -2,11 +2,12 @@
 'use client';
 
 import type { ItineraryResponse } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { MapPin } from 'lucide-react';
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import ItineraryLineCard from './ItineraryLineCard';
 import ItineraryTimeline from './ItineraryTimeline';
+import ItineraryActions from './ItineraryActions';
 
 type ItineraryResultsProps = {
   response: ItineraryResponse;
@@ -32,20 +33,29 @@ export default function ItineraryResults({ response }: ItineraryResultsProps) {
         <MapPin className="h-5 w-5 text-primary" />
         <span>Destination: {response.destination.name}</span>
       </div>
-      <Accordion type="single" collapsible className="w-full space-y-2">
-        {response.v2_itin?.map((itinerary, index) => (
-          <AccordionItem value={`item-${index}`} key={index} className="border-b-0">
-             <Card className="hover:shadow-lg transition-all duration-200">
-                <AccordionTrigger className="p-0 hover:no-underline group">
-                    <ItineraryLineCard itinerary={itinerary} />
-                </AccordionTrigger>
-                <AccordionContent>
-                    <ItineraryTimeline itinerary={itinerary} />
-                </AccordionContent>
-             </Card>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <div className="w-full space-y-2">
+        {response.v2_itin?.map((itinerary, index) => {
+            const transitStep = itinerary.steps.find(step => step.type === 'TRANSIT');
+            return (
+                <Card key={index} className="hover:shadow-lg transition-all duration-200">
+                    <CardContent className="p-0">
+                        <ItineraryLineCard itinerary={itinerary} />
+                        <Separator />
+                        <ItineraryTimeline itinerary={itinerary} />
+                    </CardContent>
+                     {transitStep && (
+                        <CardFooter className="bg-muted/50 p-2">
+                           <ItineraryActions 
+                             routeName={transitStep.line_name || 'N/A'}
+                             startAddress={itinerary.steps[0].start_stop_name}
+                             endAddress={itinerary.steps[itinerary.steps.length - 1].end_stop_name}
+                           />
+                        </CardFooter>
+                     )}
+                </Card>
+            )
+        })}
+      </div>
     </div>
   );
 }
