@@ -23,7 +23,7 @@ export default function ItineraryResults({ response }: ItineraryResultsProps) {
     setExpandedItinerary(expandedItinerary === index ? null : index);
   };
 
-  if (response.count === 0 && response.v2_itin?.length === 0) {
+  if (response.count === 0 && (!response.v2_itin || response.v2_itin.length === 0)) {
     return (
       <Card className="text-center">
         <CardHeader>
@@ -36,6 +36,8 @@ export default function ItineraryResults({ response }: ItineraryResultsProps) {
     );
   }
 
+  const hasV2Itineraries = response.v2_itin && response.v2_itin.length > 0;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-lg font-semibold">
@@ -43,7 +45,7 @@ export default function ItineraryResults({ response }: ItineraryResultsProps) {
         <span>Destination: {response.destination.name}</span>
       </div>
       <div className="w-full space-y-2">
-        {response.v2_itin?.map((itinerary, index) => {
+        {hasV2Itineraries ? response.v2_itin?.map((itinerary, index) => {
           const transitStep = itinerary.steps.find(step => step.type === 'TRANSIT');
           const isExpanded = expandedItinerary === index;
 
@@ -75,7 +77,28 @@ export default function ItineraryResults({ response }: ItineraryResultsProps) {
               </CardFooter>
             </Card>
           );
-        })}
+        }) : 
+        response.lines.map((line, index) => {
+            // Fallback for V1
+            const isExpanded = expandedItinerary === index;
+            return (
+              <Card key={line.line_id} className="overflow-hidden transition-all duration-300">
+                  <CardContent className="p-4">
+                      <p className="font-bold text-lg">Ligne {line.route_name}</p>
+                      <p>Départ à {line.start_stop_arrival_time}, arrivée à {line.arrival_time}</p>
+                      <p>Durée du trajet: {line.ride_eta_min} minutes</p>
+                  </CardContent>
+                  <CardFooter className="bg-muted/50 p-2 flex-col items-stretch gap-2">
+                      <ItineraryActions
+                        routeName={line.route_name || 'N/A'}
+                        startAddress={line.stops[0]?.name || response.start?.name || 'N/A'}
+                        endAddress={line.stops[line.stops.length - 1]?.name || response.destination.name}
+                      />
+                  </CardFooter>
+              </Card>
+            )
+        })
+        }
       </div>
     </div>
   );
