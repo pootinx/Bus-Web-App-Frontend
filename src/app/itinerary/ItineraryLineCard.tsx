@@ -32,10 +32,13 @@ export default function ItineraryLineCard({ line, response }: ItineraryLineCardP
     async function fetchLineDetails() {
       if (isOpen && !lineDetails) {
         setIsLoading(true);
+        console.log(`[ItineraryLineCard] Fetching details for line_id: ${line.line_id}`);
         try {
           const details = await getLineDetails(line.line_id);
+          console.log(`[ItineraryLineCard] Fetched details for line_id: ${line.line_id}`, details);
           setLineDetails(details);
         } catch (error) {
+          console.error(`[ItineraryLineCard] Error fetching details for line_id: ${line.line_id}`, error);
           toast({
             variant: 'destructive',
             title: 'Erreur',
