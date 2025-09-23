@@ -1,10 +1,10 @@
 import { getLineColor } from '@/lib/constants';
 import { getLines, getStopsByLine, getTripsByLine } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { StopsTimeline } from './StopsTimeline';
-import { TripSchedule } from './TripSchedule';
+import { StopsTimeline } from '../StopsTimeline';
+import { TripSchedule } from '../TripSchedule';
 import { MapPin } from 'lucide-react';
-import { MapProvider } from './MapProvider';
+import { MapProvider } from '../MapProvider';
 
 type LineDetailsPageProps = {
   params: {
