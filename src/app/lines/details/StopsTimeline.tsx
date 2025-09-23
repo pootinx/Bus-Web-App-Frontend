@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Stop } from '@/lib/types';
@@ -6,27 +7,27 @@ import { Milestone } from 'lucide-react';
 
 export function StopsTimeline({ stops }: { stops: Stop[] }) {
   return (
-    <section>
+    <section className="p-6 pt-0">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-2xl flex items-center gap-2">
-            <Milestone />
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <Milestone className="h-5 w-5" />
             <span>Arrêts</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative pl-6">
+          <div className="relative pl-3">
             {/* The vertical line */}
-            <div className="absolute left-6 top-0 h-full w-0.5 bg-border -translate-x-1/2"></div>
+            <div className="absolute left-3 top-0 h-full w-0.5 bg-border -translate-x-1/2"></div>
             
-            {stops.map((stop, index) => (
-              <div key={stop.id} className="relative flex items-center gap-4 py-3">
+            {stops.map((stop) => (
+              <div key={stop.id} className="relative flex items-center gap-4 py-2">
                 {/* The dot on the timeline */}
-                <div className="absolute left-6 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-1 bg-background rounded-full">
-                  <div className="h-3 w-3 rounded-full bg-[var(--line-color)] border-2 border-background"></div>
+                <div className="absolute left-3 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-0.5 bg-background">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{backgroundColor: 'var(--line-color)'}}></div>
                 </div>
                 {/* The stop name */}
-                <div className="flex-grow font-medium text-sm">
+                <div className="flex-grow font-medium text-sm pl-4">
                     {stop.name}
                 </div>
               </div>

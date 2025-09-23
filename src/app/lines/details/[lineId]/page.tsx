@@ -1,7 +1,7 @@
+
 import { getLineColor } from '@/lib/constants';
 import { getLines, getStopsByLine } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { StopsTimeline } from '../StopsTimeline';
 import { MapProvider } from '../MapProvider';
 import { LineDetails } from '../LineDetails';
 
