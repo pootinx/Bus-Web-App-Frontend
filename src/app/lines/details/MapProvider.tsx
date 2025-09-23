@@ -1,6 +1,7 @@
+
 'use client';
 
-import { APIProvider } from '@vis.gl/react-google-maps';
+import { APIProvider, Map } from '@vis.gl/react-google-maps';
 import LineMap from './LineMap';
 import type { BusLine, Stop } from '@/lib/types';
 import { Alert, AlertTitle } from '@/components/ui/alert';
@@ -12,6 +13,7 @@ type MapProviderProps = {
 
 export function MapProvider({ line, stops }: MapProviderProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || 'transitsage-map';
 
   if (!apiKey) {
     return (
@@ -25,7 +27,16 @@ export function MapProvider({ line, stops }: MapProviderProps) {
 
   return (
     <APIProvider apiKey={apiKey}>
-      <LineMap line={line} stops={stops} />
+        <Map
+            mapId={mapId}
+            className="w-full h-full"
+            defaultCenter={{ lat: 33.5731, lng: -7.5898 }} // Default center on Casablanca
+            defaultZoom={11}
+            gestureHandling={'greedy'}
+            disableDefaultUI={true}
+        >
+            <LineMap line={line} stops={stops} />
+        </Map>
     </APIProvider>
   );
 }
