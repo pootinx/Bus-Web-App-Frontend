@@ -28,15 +28,16 @@ export async function GET(request: Request) {
     const data = await response.json();
     
     // The external API returns an array, we want the first element
-    const lineDetails: BusLine[] = (data && data.example) ? data.example : data;
+    const lineDetailsArray: BusLine[] = (data && data.example) ? data.example : data;
 
-    if (!lineDetails || lineDetails.length === 0) {
+    if (!lineDetailsArray || lineDetailsArray.length === 0) {
       console.error('[API_LINE_DETAILS_PROXY] Line not found from external API for line_id:', lineId);
       return NextResponse.json({ error: `Line with ID ${lineId} not found` }, { status: 404 });
     }
     
-    console.log('[API_LINE_DETAILS_PROXY] Successfully fetched line details:', lineDetails[0]);
-    return NextResponse.json(lineDetails[0]);
+    const lineDetails = lineDetailsArray[0];
+    console.log('[API_LINE_DETAILS_PROXY] Successfully fetched line details:', lineDetails);
+    return NextResponse.json(lineDetails);
   } catch (error) {
     console.error('[API_LINE_DETAILS_PROXY] Internal error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
