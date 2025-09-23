@@ -42,12 +42,12 @@ export async function getLines(): Promise<BusLine[]> {
 }
 
 export async function getLineDetails(lineId: number): Promise<BusLine> {
-    const lines = await getLines();
-    const line = lines.find(l => l.id === lineId);
-    if (!line) {
+    const response = await fetch(`${BASE_URL}/station/line-details?line_id=${lineId}`, { next: { revalidate: 3600 } });
+    const lines = await handleResponse<BusLine[]>(response);
+    if (!lines || lines.length === 0) {
         throw new ApiError(`Line with ID ${lineId} not found`, 404);
     }
-    return line;
+    return lines[0];
 }
 
 export async function getStopsByLine(lineId: number): Promise<Stop[]> {
