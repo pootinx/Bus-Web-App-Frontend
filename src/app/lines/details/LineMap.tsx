@@ -60,26 +60,40 @@ export default function LineMap({ line, stops }: LineMapProps) {
   }, [map, path, color]);
 
   useEffect(() => {
-      if (!map || !window.google) return;
+      if (!map || !window.google || stops.length === 0) return;
       
-      const markers = stops.map((stop, index) => {
-          return new window.google.maps.Marker({
-              position: { lat: stop.lat, lng: stop.lon },
-              map: map,
-              title: stop.name,
-              icon: {
-                  path: window.google.maps.SymbolPath.CIRCLE,
-                  scale: (index === 0 || index === stops.length - 1) ? 6 : 4,
-                  fillColor: (index === 0) ? '#10B981' : (index === stops.length - 1) ? '#EF4444' : '#FFFFFF',
-                  fillOpacity: 1,
-                  strokeColor: color,
-                  strokeWeight: 2,
-              },
-          });
+      const startMarker = new window.google.maps.Marker({
+          position: { lat: stops[0].lat, lng: stops[0].lon },
+          map: map,
+          title: stops[0].name,
+          icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 6,
+              fillColor: '#10B981', // Green for start
+              fillOpacity: 1,
+              strokeColor: 'white',
+              strokeWeight: 2,
+          },
       });
 
+      const endMarker = new window.google.maps.Marker({
+          position: { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lon },
+          map: map,
+          title: stops[stops.length - 1].name,
+           icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 6,
+              fillColor: '#EF4444', // Red for end
+              fillOpacity: 1,
+              strokeColor: 'white',
+              strokeWeight: 2,
+          },
+      });
+
+
       return () => {
-          markers.forEach(marker => marker.setMap(null));
+          startMarker.setMap(null);
+          endMarker.setMap(null);
       };
 
   }, [map, stops, color]);
