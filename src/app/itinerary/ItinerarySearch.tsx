@@ -88,8 +88,6 @@ export default function ItinerarySearch() {
     const params: GetItineraryParams = {
       dest_add: data.destination,
       city_id: data.city_id,
-      limit: 5,
-      start_radius_m: 1000,
     };
 
     if (useGps && position) {

@@ -61,8 +61,6 @@ export interface GetItineraryParams {
   start_add?: string;
   start_lat?: number;
   start_lon?: number;
-  start_radius_m?: number;
-  limit?: number;
 }
 
 export async function getItinerary(params: GetItineraryParams): Promise<ItineraryResponse> {
@@ -72,8 +70,6 @@ export async function getItinerary(params: GetItineraryParams): Promise<Itinerar
     ...(params.start_add && { start_add: params.start_add }),
     ...(params.start_lat && { start_lat: params.start_lat.toString() }),
     ...(params.start_lon && { start_lon: params.start_lon.toString() }),
-    ...(params.start_radius_m && { start_radius_m: params.start_radius_m.toString() }),
-    ...(params.limit && { limit: params.limit.toString() }),
   });
   const response = await fetch(`${BASE_URL}/itinerary/routes?${query.toString()}`);
   return handleResponse<ItineraryResponse>(response);
