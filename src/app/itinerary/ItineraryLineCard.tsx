@@ -34,6 +34,7 @@ export default function ItineraryLineCard({ line, response }: ItineraryLineCardP
         setIsLoading(true);
         console.log(`[ItineraryLineCard] Fetching details for line_id: ${line.line_id}`);
         try {
+          // This now calls the corrected getLineDetails function
           const details = await getLineDetails(line.line_id);
           console.log(`[ItineraryLineCard] Fetched details for line_id: ${line.line_id}`, details);
           setLineDetails(details);

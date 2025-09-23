@@ -47,16 +47,15 @@ export async function getLines(): Promise<BusLine[]> {
   return handleResponse<BusLine[]>(response);
 }
 
-// This function now calls the internal proxy API
+// This function now calls getLines and finds the line by id
 export async function getLineDetails(lineId: number): Promise<BusLine> {
-    const url = `/api/line-details?line_id=${lineId}`;
-    console.log(`[API_CLIENT] Fetching line details via proxy from ${url}`);
-    const response = await fetch(url);
-    // The proxy will return a single object, not an array
-    const line = await handleResponse<BusLine>(response);
+    console.log(`[API_CLIENT] Fetching details for line ${lineId} by getting all lines.`);
+    const lines = await getLines();
+    const line = lines.find(l => l.id === lineId);
     if (!line) {
         throw new ApiError(`Line with ID ${lineId} not found`, 404);
     }
+    console.log(`[API_CLIENT] Found line details for ${lineId}:`, line);
     return line;
 }
 
