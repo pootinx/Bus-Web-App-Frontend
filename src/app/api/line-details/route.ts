@@ -1,8 +1,9 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { getLines } from '@/lib/api';
 import type { BusLine } from '@/lib/types';
+
+const BASE_URL = 'https://tobis-backend.onrender.com';
 
 // This route acts as a proxy to fetch line details from the server-side, avoiding CORS issues.
 export async function GET(request: Request) {
@@ -22,8 +23,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('[API_LINE_DETAILS_PROXY] Fetching all lines to find details for line_id:', lineId);
-    const allLines = await getLines();
+    const url = `${BASE_URL}/station/lines`;
+    console.log('[API_LINE_DETAILS_PROXY] Fetching all lines from external API to find details for line_id:', lineId);
+    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[API_LINE_DETAILS_PROXY] Error fetching from external API (${response.status}): ${errorText}`);
+        throw new Error(`External API request failed with status ${response.status}`);
+    }
+
+    const externalData = await response.json();
+    const allLines: BusLine[] = (externalData && externalData.example) ? externalData.example : externalData;
+
     const lineDetails = allLines.find(line => line.id === lineId);
 
     if (!lineDetails) {
