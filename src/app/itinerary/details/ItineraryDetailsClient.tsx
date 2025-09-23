@@ -3,7 +3,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import type { ItineraryV2 } from '@/lib/types';
-import { ItineraryTimeline } from '../ItineraryTimeline';
+import ItineraryTimeline from '../ItineraryTimeline';
 import { MapProvider } from '@/app/lines/details/MapProvider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getLineColor } from '@/lib/constants';
