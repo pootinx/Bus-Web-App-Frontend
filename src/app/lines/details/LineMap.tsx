@@ -60,40 +60,66 @@ export default function LineMap({ line, stops }: LineMapProps) {
   }, [map, path, color]);
 
   useEffect(() => {
-      if (!map || !window.google || stops.length === 0) return;
+      if (!map || !window.google || !stops || stops.length === 0) return;
       
-      const startMarker = new window.google.maps.Marker({
-          position: { lat: stops[0].lat, lng: stops[0].lon },
-          map: map,
-          title: stops[0].name,
-          icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 6,
-              fillColor: '#10B981', // Green for start
-              fillOpacity: 1,
-              strokeColor: 'white',
-              strokeWeight: 2,
-          },
-      });
+      const markers: google.maps.Marker[] = [];
 
-      const endMarker = new window.google.maps.Marker({
-          position: { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lon },
-          map: map,
-          title: stops[stops.length - 1].name,
-           icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 6,
-              fillColor: '#EF4444', // Red for end
-              fillOpacity: 1,
-              strokeColor: 'white',
-              strokeWeight: 2,
-          },
+      // Start and End markers
+      if (stops.length > 0) {
+        const startMarker = new window.google.maps.Marker({
+            position: { lat: stops[0].lat, lng: stops[0].lon },
+            map: map,
+            title: stops[0].name,
+            icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: '#FFFFFF',
+                fillOpacity: 1,
+                strokeColor: '#000000',
+                strokeWeight: 2,
+            },
+        });
+        markers.push(startMarker);
+
+        if (stops.length > 1) {
+            const endMarker = new window.google.maps.Marker({
+                position: { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lon },
+                map: map,
+                title: stops[stops.length - 1].name,
+                icon: {
+                    path: window.google.maps.SymbolPath.CIRCLE,
+                    scale: 6,
+                    fillColor: '#000000',
+                    fillOpacity: 1,
+                    strokeColor: 'white',
+                    strokeWeight: 2,
+                },
+            });
+            markers.push(endMarker);
+        }
+      }
+
+      // Intermediate stop dots
+      stops.slice(1, -1).forEach(stop => {
+          const stopMarker = new window.google.maps.Marker({
+              position: { lat: stop.lat, lng: stop.lon },
+              map: map,
+              title: stop.name,
+              icon: {
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 4,
+                  fillColor: color,
+                  fillOpacity: 1,
+                  strokeColor: 'white',
+                  strokeWeight: 1.5,
+              }
+          });
+          markers.push(stopMarker);
       });
 
 
       return () => {
-          startMarker.setMap(null);
-          endMarker.setMap(null);
+          markers.forEach(marker => marker.setMap(null));
       };
 
   }, [map, stops, color]);

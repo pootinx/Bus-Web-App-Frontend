@@ -2,8 +2,7 @@
 'use client';
 
 import type { BusLine, Stop } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Milestone } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { StopsTimeline } from './StopsTimeline';
 
 type LineDetailsProps = {
@@ -14,9 +13,9 @@ type LineDetailsProps = {
 export function LineDetails({ line, stops }: LineDetailsProps) {
     
     return (
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto bg-card">
             <div className="p-6">
-                <h1 className="font-headline text-2xl font-bold">Ligne {line.route_name}</h1>
+                <h1 className="font-headline text-2xl font-bold text-primary" style={{color: 'var(--line-color)'}}>Ligne {line.route_name}</h1>
                 <div className="text-muted-foreground pt-4 space-y-2">
                     <div className="flex items-start gap-2">
                         <MapPin className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
