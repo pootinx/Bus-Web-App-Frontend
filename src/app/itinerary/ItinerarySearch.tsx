@@ -35,8 +35,6 @@ const formSchema = z.object({
   start: z.string(),
   destination: z.string().min(3, { message: 'La destination doit comporter au moins 3 caractères.' }),
   city_id: z.coerce.number().int().positive(),
-  radius: z.coerce.number().int().positive().optional().default(1000),
-  limit: z.coerce.number().int().positive().optional().default(5),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,8 +56,6 @@ export default function ItinerarySearch() {
       start: '',
       destination: 'Gare routière Oulad Ziyane',
       city_id: 1, // Default to Casablanca
-      radius: 1000,
-      limit: 5,
     },
   });
 
@@ -86,13 +82,14 @@ export default function ItinerarySearch() {
   }
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
+    console.log('Form data submitted:', data);
     setSearchState({ loading: true, error: null, results: null });
 
     const params: GetItineraryParams = {
       dest_add: data.destination,
       city_id: data.city_id,
-      limit: data.limit,
-      start_radius_m: data.radius,
+      limit: 5,
+      start_radius_m: 1000,
     };
 
     if (useGps && position) {
@@ -102,10 +99,14 @@ export default function ItinerarySearch() {
       params.start_add = data.start;
     }
 
+    console.log('Sending API request with params:', params);
+
     try {
       const results = await getItinerary(params);
+      console.log('API response received:', results);
       setSearchState({ loading: false, error: null, results });
     } catch (error) {
+      console.error('API request failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue.';
       setSearchState({ loading: false, error: errorMessage, results: null });
       toast({
