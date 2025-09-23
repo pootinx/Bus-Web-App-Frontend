@@ -18,7 +18,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
   }
   try {
     const data = await response.json();
-    console.log(`[API_CLIENT] Response for ${url}:`, data);
     // The API sometimes wraps responses in an "example" object
     if (data && typeof data === 'object' && 'example' in data && Array.isArray(data.example)) {
       return data.example as T;
@@ -58,7 +57,6 @@ export async function getLineDetails(lineId: number): Promise<BusLine> {
         throw new ApiError(errorData.error || `Failed to fetch line details`, response.status);
     }
     const line = await response.json();
-    console.log(`[API_CLIENT] Found line details for ${lineId}:`, line);
     return line;
 }
 
