@@ -56,5 +56,6 @@ export interface ItineraryResponse {
 }
 
 export interface City {
+  id: number;
   name: string;
 }

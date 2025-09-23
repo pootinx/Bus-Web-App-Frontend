@@ -1,8 +1,8 @@
 import type { City } from './types';
 
 export const CITIES: City[] = [
-  { name: 'Casablanca' },
-  { name: 'Tetouane' },
+  { id: 1, name: 'Casablanca' },
+  { id: 2, name: 'Tetouane' },
 ];
 
 export const LINE_COLORS = [

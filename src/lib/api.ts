@@ -57,6 +57,8 @@ export async function getLinesByStop(stopId: number): Promise<BusLine[]> {
 
 export interface GetItineraryParams {
   dest_add: string;
+  city_id: number;
+  start_add?: string;
   start_lat?: number;
   start_lon?: number;
   start_radius_m?: number;
@@ -66,6 +68,8 @@ export interface GetItineraryParams {
 export async function getItinerary(params: GetItineraryParams): Promise<ItineraryResponse> {
   const query = new URLSearchParams({
     dest_add: params.dest_add,
+    city_id: params.city_id.toString(),
+    ...(params.start_add && { start_add: params.start_add }),
     ...(params.start_lat && { start_lat: params.start_lat.toString() }),
     ...(params.start_lon && { start_lon: params.start_lon.toString() }),
     ...(params.start_radius_m && { start_radius_m: params.start_radius_m.toString() }),

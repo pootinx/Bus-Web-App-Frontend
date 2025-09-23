@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { getItinerary, type GetItineraryParams } from '@/lib/api';
 import type { ItineraryResponse } from '@/lib/types';
 import { useLocation } from '@/hooks/use-location';
+import { CITIES } from '@/lib/constants';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, LocateFixed, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +34,8 @@ import ItineraryResults from './ItineraryResults';
 const formSchema = z.object({
   start: z.string(),
   destination: z.string().min(3, { message: 'La destination doit comporter au moins 3 caractères.' }),
-  radius: z.coerce.number().int().positive().optional().default(600),
+  city_id: z.coerce.number().int().positive(),
+  radius: z.coerce.number().int().positive().optional().default(1000),
   limit: z.coerce.number().int().positive().optional().default(5),
 });
 
@@ -48,7 +57,8 @@ export default function ItinerarySearch() {
     defaultValues: {
       start: '',
       destination: 'Gare routière Oulad Ziyane',
-      radius: 600,
+      city_id: 1, // Default to Casablanca
+      radius: 1000,
       limit: 5,
     },
   });
@@ -80,6 +90,7 @@ export default function ItinerarySearch() {
 
     const params: GetItineraryParams = {
       dest_add: data.destination,
+      city_id: data.city_id,
       limit: data.limit,
       start_radius_m: data.radius,
     };
@@ -88,9 +99,7 @@ export default function ItinerarySearch() {
       params.start_lat = position.coords.latitude;
       params.start_lon = position.coords.longitude;
     } else if (data.start && data.start !== 'Ma position') {
-      // The backend can geocode a start address as well, let's assume this for now.
-      // This is a slight deviation from the prompt which only mentioned start_lat/lon for GPS.
-      // A more robust solution might require a separate geocoding step on the client.
+      params.start_add = data.start;
     }
 
     try {
@@ -111,15 +120,39 @@ export default function ItinerarySearch() {
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+           <FormField
+            control={form.control}
+            name="city_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ville</FormLabel>
+                <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selectionner une ville" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CITIES.map((city) => (
+                      <SelectItem key={city.id} value={city.id.toString()}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <div className="flex items-end gap-2">
             <FormField
               control={form.control}
               name="start"
               render={({ field }) => (
                 <FormItem className="flex-grow">
-                  <FormLabel>Point de départ</FormLabel>
+                  <FormLabel>Point de départ (optionnel)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Point de départ" {...field} disabled={useGps} />
+                    <Input placeholder="Adresse de départ ou utiliser le GPS" {...field} disabled={useGps} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,7 +172,7 @@ export default function ItinerarySearch() {
               <FormItem>
                 <FormLabel>Destination</FormLabel>
                 <FormControl>
-                  <Input placeholder="Destination" {...field} />
+                  <Input placeholder="Adresse de destination" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

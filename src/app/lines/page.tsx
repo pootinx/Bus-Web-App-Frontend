@@ -11,7 +11,7 @@ export default function LinesPage() {
       </h1>
       <div className="grid gap-4 md:grid-cols-2">
         {CITIES.map((city) => (
-          <Link href={`/lines/${city.name.toLowerCase()}`} key={city.name}>
+          <Link href={`/lines/${city.name.toLowerCase()}`} key={city.id}>
             <Card className="hover:shadow-lg hover:border-primary transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center gap-4">
