@@ -47,14 +47,17 @@ export async function getLines(): Promise<BusLine[]> {
   return handleResponse<BusLine[]>(response);
 }
 
-// This function now calls getLines and finds the line by id
+// This function now calls the internal proxy API route.
+// This is safe to call from client components.
 export async function getLineDetails(lineId: number): Promise<BusLine> {
-    console.log(`[API_CLIENT] Fetching details for line ${lineId} by getting all lines.`);
-    const lines = await getLines();
-    const line = lines.find(l => l.id === lineId);
-    if (!line) {
-        throw new ApiError(`Line with ID ${lineId} not found`, 404);
+    const url = `/api/line-details?line_id=${lineId}`;
+    console.log(`[API_CLIENT] Fetching line details from internal proxy: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(errorData.error || `Failed to fetch line details`, response.status);
     }
+    const line = await response.json();
     console.log(`[API_CLIENT] Found line details for ${lineId}:`, line);
     return line;
 }
