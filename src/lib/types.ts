@@ -1,3 +1,4 @@
+
 export interface BusLine {
   id: number;
   route_name: string;
@@ -29,6 +30,7 @@ export interface Trip {
   direct: boolean;
 }
 
+// V1 Itinerary Types
 export interface ItineraryStop {
   id: number;
   name: string;
@@ -47,6 +49,28 @@ export interface ItineraryLine {
   walk_to_dest_polyline?: string;
 }
 
+// V2 Itinerary Types
+export type ItineraryStep = {
+    type: 'WALK' | 'TRANSIT';
+    duration_seconds: number;
+    distance_meters?: number; // For WALKING
+    polyline: string;
+    start_time: string;
+    end_time: string;
+    start_stop_name: string;
+    end_stop_name: string;
+    line_id?: number; // For TRANSIT
+    line_name?: string; // For TRANSIT
+    num_stops?: number; // For TRANSIT
+}
+
+export type ItineraryV2 = {
+    duration_seconds: number;
+    start_time: string;
+    end_time: string;
+    steps: ItineraryStep[];
+}
+
 export interface ItineraryResponse {
   start?: {
     name: string;
@@ -60,6 +84,7 @@ export interface ItineraryResponse {
   };
   count: number;
   lines: ItineraryLine[];
+  v2_itin?: ItineraryV2[];
 }
 
 export interface City {
