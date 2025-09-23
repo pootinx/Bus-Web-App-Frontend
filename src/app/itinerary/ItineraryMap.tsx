@@ -38,47 +38,53 @@ function MapPolylines({ line, lineDetails }: { line: ItineraryLine, lineDetails:
 
     if (!map || !window.google) return null;
 
-    return (
-        <>
-            {busPath.length > 0 && (
-                <google.maps.Polyline
-                    map={map}
-                    path={busPath}
-                    strokeColor={color}
-                    strokeOpacity={0.9}
-                    strokeWeight={6}
-                />
-            )}
-            {walkToStartPath.length > 0 && (
-                <google.maps.Polyline
-                    map={map}
-                    path={walkToStartPath}
-                    strokeColor="#4285F4"
-                    strokeOpacity={0}
-                    strokeWeight={5}
-                    icons={[{
-                        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
-                        offset: '0',
-                        repeat: '20px'
-                    }]}
-                />
-            )}
-            {walkToDestPath.length > 0 && (
-                <google.maps.Polyline
-                    map={map}
-                    path={walkToDestPath}
-                    strokeColor="#4285F4"
-                    strokeOpacity={0}
-                    strokeWeight={5}
-                    icons={[{
-                        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
-                        offset: '0',
-                        repeat: '20px'
-                    }]}
-                />
-            )}
-        </>
-    )
+    // This useEffect is to manage the lifecycle of the polylines on the map
+    React.useEffect(() => {
+      const busPolyline = new window.google.maps.Polyline({
+          path: busPath,
+          strokeColor: color,
+          strokeOpacity: 0.9,
+          strokeWeight: 6,
+          map: map,
+      });
+
+      const walkToStartPolyline = new window.google.maps.Polyline({
+          path: walkToStartPath,
+          strokeColor: '#4285F4',
+          strokeOpacity: 0,
+          strokeWeight: 5,
+          icons: [{
+              icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+              offset: '0',
+              repeat: '20px'
+          }],
+          map: map,
+      });
+
+      const walkToDestPolyline = new window.google.maps.Polyline({
+          path: walkToDestPath,
+          strokeColor: '#4285F4',
+          strokeOpacity: 0,
+          strokeWeight: 5,
+          icons: [{
+              icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },
+              offset: '0',
+              repeat: '20px'
+          }],
+          map: map,
+      });
+
+      // Cleanup function to remove polylines when component unmounts or dependencies change
+      return () => {
+          busPolyline.setMap(null);
+          walkToStartPolyline.setMap(null);
+          walkToDestPolyline.setMap(null);
+      };
+
+    }, [map, busPath, walkToStartPath, walkToDestPath, color]);
+
+
+    return null; // The polylines are rendered directly via the effect
 }
 
 
