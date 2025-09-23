@@ -1,26 +1,58 @@
 'use client';
 
-import { ItineraryLine } from '@/lib/types';
+import { ItineraryLine, ItineraryResponse, BusLine } from '@/lib/types';
 import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Bus, Milestone, Dot } from 'lucide-react';
+import { Clock, Bus, Milestone, Dot, Loader2 } from 'lucide-react';
 import { getLineColor } from '@/lib/constants';
 import DelayPrediction from './DelayPrediction';
+import ItineraryMap from './ItineraryMap';
+import { useEffect, useState } from 'react';
+import { getLineDetails } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+
 
 type ItineraryLineCardProps = {
   line: ItineraryLine;
+  response: ItineraryResponse;
 };
 
-export default function ItineraryLineCard({ line }: ItineraryLineCardProps) {
+export default function ItineraryLineCard({ line, response }: ItineraryLineCardProps) {
   const color = getLineColor(line.line_id);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lineDetails, setLineDetails] = useState<BusLine | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchLineDetails() {
+      if (isOpen && !lineDetails) {
+        setIsLoading(true);
+        try {
+          const details = await getLineDetails(line.line_id);
+          setLineDetails(details);
+        } catch (error) {
+          toast({
+            variant: 'destructive',
+            title: 'Erreur',
+            description: 'Impossible de charger les détails de la ligne.',
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+    fetchLineDetails();
+  }, [isOpen, line.line_id, lineDetails, toast]);
+
 
   return (
     <AccordionItem value={`line-${line.line_id}`} className="rounded-lg border bg-card shadow-sm">
-      <AccordionTrigger className="p-4 hover:no-underline">
+      <AccordionTrigger className="p-4 hover:no-underline" onClick={() => setIsOpen(prev => !prev)}>
         <div className="flex w-full items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0" style={{ color }}>
@@ -43,6 +75,19 @@ export default function ItineraryLineCard({ line }: ItineraryLineCardProps) {
       </AccordionTrigger>
       <AccordionContent className="p-4 pt-0">
         <div className="space-y-4">
+            <div className="h-64 w-full bg-muted rounded-md">
+              {isLoading ? (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : lineDetails ? (
+                <ItineraryMap line={line} lineDetails={lineDetails} response={response} />
+              ) : (
+                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    Sélectionnez pour afficher la carte
+                 </div>
+              )}
+            </div>
             <div className="relative pl-6">
                 {line.stops.map((stop, index) => (
                 <div key={stop.id} className="relative flex gap-4 py-2">
@@ -56,8 +101,6 @@ export default function ItineraryLineCard({ line }: ItineraryLineCardProps) {
                 ))}
             </div>
             <DelayPrediction 
-                // Assuming start/end stop names are available. API docs show start_stop and end_stop for trips, but not for Itinerary.
-                // Using first and last stop names from the stops list as a fallback.
                 routeName={line.route_name}
                 startAddress={line.stops[0]?.name || 'Unknown Start'}
                 endAddress={line.stops[line.stops.length-1]?.name || 'Unknown End'}

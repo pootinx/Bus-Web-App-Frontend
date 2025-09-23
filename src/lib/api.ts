@@ -12,14 +12,20 @@ class ApiError extends Error {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`API Error (${response.status}): ${errorText}`);
     throw new ApiError(errorText || `Request failed with status ${response.status}`, response.status);
   }
-  const data = await response.json();
-  // The API sometimes wraps responses in an "example" object
-  if (data && typeof data === 'object' && 'example' in data && Array.isArray(data.example)) {
-    return data.example as T;
+  try {
+    const data = await response.json();
+    // The API sometimes wraps responses in an "example" object
+    if (data && typeof data === 'object' && 'example' in data && Array.isArray(data.example)) {
+      return data.example as T;
+    }
+    return data as T;
+  } catch (e) {
+    console.error('Failed to parse JSON response:', e);
+    throw new ApiError('Invalid JSON response from server');
   }
-  return data as T;
 }
 
 export async function getHealth(): Promise<string> {
@@ -33,6 +39,15 @@ export async function getHealth(): Promise<string> {
 export async function getLines(): Promise<BusLine[]> {
   const response = await fetch(`${BASE_URL}/station/lines`, { next: { revalidate: 3600 } }); // Cache for 1 hour
   return handleResponse<BusLine[]>(response);
+}
+
+export async function getLineDetails(lineId: number): Promise<BusLine> {
+    const lines = await getLines();
+    const line = lines.find(l => l.id === lineId);
+    if (!line) {
+        throw new ApiError(`Line with ID ${lineId} not found`, 404);
+    }
+    return line;
 }
 
 export async function getStopsByLine(lineId: number): Promise<Stop[]> {

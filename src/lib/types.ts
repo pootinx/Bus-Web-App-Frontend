@@ -43,9 +43,16 @@ export interface ItineraryLine {
   arrival_time: string;
   ride_eta_min: number;
   stops: ItineraryStop[];
+  walk_to_start_polyline?: string;
+  walk_to_dest_polyline?: string;
 }
 
 export interface ItineraryResponse {
+  start?: {
+    name: string;
+    lat: number;
+    lon: number;
+  };
   destination: {
     name: string;
     lat: number;

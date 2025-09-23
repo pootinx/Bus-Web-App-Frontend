@@ -32,7 +32,7 @@ export default function ItineraryResults({ response }: ItineraryResultsProps) {
       </div>
       <Accordion type="single" collapsible className="w-full space-y-2">
         {response.lines.map((line) => (
-          <ItineraryLineCard key={line.line_id} line={line} />
+          <ItineraryLineCard key={line.line_id} line={line} response={response} />
         ))}
       </Accordion>
     </div>
