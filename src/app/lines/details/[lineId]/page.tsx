@@ -1,10 +1,9 @@
 import { getLineColor } from '@/lib/constants';
-import { getLines, getStopsByLine, getTripsByLine } from '@/lib/api';
+import { getLines, getStopsByLine } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { StopsTimeline } from '../StopsTimeline';
-import { TripSchedule } from '../TripSchedule';
-import { MapPin } from 'lucide-react';
 import { MapProvider } from '../MapProvider';
+import { LineDetails } from '../LineDetails';
 
 type LineDetailsPageProps = {
   params: {
@@ -30,36 +29,17 @@ export default async function LineDetailsPage({ params }: LineDetailsPageProps) 
     if (!line) throw new Error('Line not found');
 
     const stops = await getStopsByLine(lineId);
-    const trips = await getTripsByLine(lineId);
-
     const color = getLineColor(lineId);
 
     return (
-      <div style={{ '--line-color': color } as React.CSSProperties}>
-        <header className="sticky top-16 z-40 bg-[var(--line-color)] text-white shadow-md">
-          <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold font-headline">Ligne {line.route_name}</h1>
-          </div>
-        </header>
-        
-        <div className="h-80 md:h-96 w-full">
-            <MapProvider line={line} stops={stops} />
-        </div>
-
-        <div className="container mx-auto max-w-4xl py-8 px-4 space-y-8">
-            <section className="text-center">
-                 <h2 className="text-xl font-semibold flex items-center justify-center gap-2 flex-wrap">
-                    <MapPin className="h-5 w-5 text-green-500" />
-                    <span>{line.start_address}</span>
-                    <span>&rarr;</span>
-                    <MapPin className="h-5 w-5 text-red-500" />
-                    <span>{line.end_address}</span>
-                 </h2>
-                 <p className="text-muted-foreground">{stops.length} arrêts</p>
-            </section>
-          
-          <TripSchedule trips={trips} />
-          <StopsTimeline stops={stops} />
+      <div style={{ '--line-color': color } as React.CSSProperties} className="h-[calc(100vh-4rem)]">
+        <div className="flex flex-col md:flex-row h-full">
+            <div className="md:w-1/3 lg:w-1/4 h-full border-r overflow-y-auto">
+                <LineDetails line={line} stops={stops} />
+            </div>
+            <div className="flex-1 h-full">
+                 <MapProvider line={line} stops={stops} />
+            </div>
         </div>
       </div>
     );
