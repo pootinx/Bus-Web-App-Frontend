@@ -71,6 +71,12 @@ export async function getItinerary(params: GetItineraryParams): Promise<Itinerar
     ...(params.start_lat && { start_lat: params.start_lat.toString() }),
     ...(params.start_lon && { start_lon: params.start_lon.toString() }),
   });
+  console.log('Fetching itinerary with query:', query.toString());
   const response = await fetch(`${BASE_URL}/itinerary/routes?${query.toString()}`);
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error('Error fetching itinerary:', response.status, errorBody);
+    throw new Error(`Failed to fetch: ${response.status} ${errorBody}`);
+  }
   return handleResponse<ItineraryResponse>(response);
 }

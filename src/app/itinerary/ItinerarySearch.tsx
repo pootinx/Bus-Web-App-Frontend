@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { getItinerary, type GetItineraryParams } from '@/lib/api';
+import type { GetItineraryParams } from '@/lib/api';
 import type { ItineraryResponse } from '@/lib/types';
 import { useLocation } from '@/hooks/use-location';
 import { CITIES } from '@/lib/constants';
@@ -100,7 +100,15 @@ export default function ItinerarySearch() {
     console.log('Sending API request with params:', params);
 
     try {
-      const results = await getItinerary(params);
+      const query = new URLSearchParams(params as any).toString();
+      const response = await fetch(`/api/itinerary?${query}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'An unknown error occurred');
+      }
+
+      const results = await response.json();
       console.log('API response received:', results);
       setSearchState({ loading: false, error: null, results });
     } catch (error) {
