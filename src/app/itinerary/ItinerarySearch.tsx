@@ -30,7 +30,6 @@ import { Loader2, LocateFixed, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ItineraryResults from './ItineraryResults';
 import { AutocompleteInput } from './AutocompleteInput';
-import { APIProvider } from '@vis.gl/react-google-maps';
 
 const formSchema = z.object({
   start: z.string(),
@@ -50,7 +49,6 @@ export default function ItinerarySearch() {
   }>({ loading: false, error: null, results: null });
 
   const { toast } = useToast();
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -128,7 +126,6 @@ export default function ItinerarySearch() {
 
   return (
     <>
-    <APIProvider apiKey={apiKey!}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
            <FormField
@@ -209,7 +206,6 @@ export default function ItinerarySearch() {
           </Button>
         </form>
       </Form>
-      </APIProvider>
       <div className="mt-8">
         {searchState.loading && (
           <div className="flex justify-center p-8">
