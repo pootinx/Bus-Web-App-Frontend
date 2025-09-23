@@ -10,7 +10,6 @@ import { useLocation } from '@/hooks/use-location';
 import { CITIES } from '@/lib/constants';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -30,6 +29,8 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, LocateFixed, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ItineraryResults from './ItineraryResults';
+import { AutocompleteInput } from './AutocompleteInput';
+import { APIProvider } from '@vis.gl/react-google-maps';
 
 const formSchema = z.object({
   start: z.string(),
@@ -49,6 +50,7 @@ export default function ItinerarySearch() {
   }>({ loading: false, error: null, results: null });
 
   const { toast } = useToast();
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,6 +65,7 @@ export default function ItinerarySearch() {
     setUseGps(checked);
     if (checked) {
       getLocation();
+      form.setValue('start', 'Ma position');
     } else {
       clearLocation();
       form.setValue('start', '');
@@ -125,6 +128,7 @@ export default function ItinerarySearch() {
 
   return (
     <>
+    <APIProvider apiKey={apiKey!}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
            <FormField
@@ -159,7 +163,14 @@ export default function ItinerarySearch() {
                 <FormItem className="flex-grow">
                   <FormLabel>Point de départ (optionnel)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Adresse de départ ou utiliser le GPS" {...field} disabled={useGps} />
+                     <AutocompleteInput 
+                        placeholder="Adresse de départ ou utiliser le GPS" 
+                        {...field} 
+                        disabled={useGps} 
+                        onPlaceSelect={(place) => {
+                            field.onChange(place?.formatted_address || '');
+                        }}
+                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,7 +190,13 @@ export default function ItinerarySearch() {
               <FormItem>
                 <FormLabel>Destination</FormLabel>
                 <FormControl>
-                  <Input placeholder="Adresse de destination" {...field} />
+                    <AutocompleteInput 
+                        placeholder="Adresse de destination" 
+                        {...field}
+                        onPlaceSelect={(place) => {
+                            field.onChange(place?.formatted_address || '');
+                        }}
+                    />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -192,6 +209,7 @@ export default function ItinerarySearch() {
           </Button>
         </form>
       </Form>
+      </APIProvider>
       <div className="mt-8">
         {searchState.loading && (
           <div className="flex justify-center p-8">
