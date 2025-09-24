@@ -26,7 +26,7 @@ export default function Home() {
           <CardTitle className="font-headline text-3xl text-center">Itinéraire</CardTitle>
         </CardHeader>
         <CardContent>
-          <APIProvider apiKey={apiKey}>
+          <APIProvider apiKey={apiKey} libraries={['places']}>
             <ItinerarySearch />
           </APIProvider>
         </CardContent>
