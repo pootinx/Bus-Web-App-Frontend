@@ -1,9 +1,8 @@
-
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Clock, MapPin, Search } from 'lucide-react';
-import { useDebounce } from '@/hooks/use-debounce'; // Assuming you have a debounce hook
+import { useDebounce } from '@/hooks/use-debounce';
 
 declare global {
   interface Window {

@@ -10,7 +10,6 @@ import ItineraryResults from './ItineraryResults';
 import LocationInput from './LocationInput';
 import { CITIES } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 
 type PlaceInfo = {
