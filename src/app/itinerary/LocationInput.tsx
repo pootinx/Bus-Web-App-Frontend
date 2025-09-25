@@ -33,10 +33,10 @@ export default function LocationInput({ value, onSelect, placeholder }: Location
   const ref = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState(value);
 
+  // Set initial value, but don't force it on every render.
   useEffect(() => {
     setInputValue(value);
-    setValue(value, false);
-  }, [value, setValue]);
+  }, [value]);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
