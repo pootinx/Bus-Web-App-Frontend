@@ -10,13 +10,15 @@ import ItineraryResults from './ItineraryResults';
 import LocationInput from './LocationInput';
 import { CITIES } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMapsLibrary } from '@vis.gl/react-google-maps';
+import { useLoadScript } from '@react-google-maps/api';
 
 type PlaceInfo = {
   lat: number;
   lng: number;
   address: string;
 } | null;
+
+const libraries = ['places'];
 
 export default function ItinerarySearch() {
   const [startPlace, setStartPlace] = useState<PlaceInfo>(null);
@@ -30,7 +32,11 @@ export default function ItinerarySearch() {
   }>({ loading: false, error: null, results: null });
 
   const { toast } = useToast();
-  const places = useMapsLibrary('places');
+  
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: libraries as any,
+  });
 
   const handleSwap = () => {
       const tempStart = startPlace;
@@ -84,6 +90,9 @@ export default function ItinerarySearch() {
     }
   };
 
+  if (loadError) return <div>Erreur de chargement des cartes</div>;
+  if (!isLoaded) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
   return (
     <div>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -98,13 +107,11 @@ export default function ItinerarySearch() {
                     value={startPlace?.address || ''}
                     onSelect={(place) => setStartPlace(place)}
                     placeholder="Choose starting point"
-                    isLoaded={!!places}
                 />
                 <LocationInput
                     value={destinationPlace?.address || ''}
                     onSelect={(place) => setDestinationPlace(place)}
                     placeholder="Choose destination, or click on the map"
-                    isLoaded={!!places}
                 />
             </div>
             <div className="flex items-center justify-center">
