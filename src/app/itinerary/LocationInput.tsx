@@ -35,7 +35,8 @@ export default function LocationInput({ value, onSelect, placeholder }: Location
 
   useEffect(() => {
     setInputValue(value);
-  }, [value]);
+    setValue(value, false);
+  }, [value, setValue]);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -61,8 +62,10 @@ export default function LocationInput({ value, onSelect, placeholder }: Location
       const {
         place_id,
         structured_formatting: { main_text, secondary_text },
-        description,
+        types,
       } = suggestion;
+
+      const isHistory = types.includes('geocode') || types.includes('address');
 
       return (
         <li
@@ -71,7 +74,11 @@ export default function LocationInput({ value, onSelect, placeholder }: Location
           className="flex items-center gap-4 p-2 rounded-md cursor-pointer hover:bg-accent"
         >
           <div className="p-2 bg-gray-100 rounded-full">
-            <MapPin className="h-5 w-5 text-gray-500" />
+             {isHistory ? (
+                <Clock className="h-5 w-5 text-gray-500" />
+            ) : (
+                <MapPin className="h-5 w-5 text-gray-500" />
+            )}
           </div>
           <div>
             <p className="font-medium">{main_text}</p>
@@ -95,20 +102,21 @@ export default function LocationInput({ value, onSelect, placeholder }: Location
 
   return (
     <div ref={ref} className="relative w-full">
-      <Input
-        value={inputValue}
-        onChange={handleInput}
-        disabled={!ready}
-        placeholder={placeholder}
-        className="w-full"
-      />
+       <div className="relative">
+         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            value={inputValue}
+            onChange={handleInput}
+            disabled={!ready}
+            placeholder={placeholder}
+            className="w-full pl-10"
+          />
+       </div>
       {status === 'OK' && (
-        <ul className="absolute z-10 w-full mt-1 bg-card border rounded-lg shadow-lg">
+        <ul className="absolute z-10 w-full mt-1 bg-card border rounded-lg shadow-lg p-2">
           {renderSuggestions()}
         </ul>
       )}
     </div>
   );
 }
-
-// Create a new component file src/app/itinerary/LocationInput.tsx and add the above content

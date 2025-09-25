@@ -2,107 +2,25 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import type { ItineraryResponse, ItineraryV2 } from '@/lib/types';
-import { CITIES } from '@/lib/constants';
+import type { ItineraryV2 } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, ArrowRightLeft, MapPin, Circle, MoreVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ItineraryResults from './ItineraryResults';
-import { AutocompleteInput } from './AutocompleteInput';
-
-const formSchema = z.object({
-  start: z.string().min(3, { message: 'Le point de départ doit comporter au moins 3 caractères.' }),
-  destination: z.string().min(3, { message: 'La destination doit comporter au moins 3 caractères.' }),
-  city_id: z.coerce.number().int().positive(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import LocationInput from './LocationInput';
+import { CITIES } from '@/lib/constants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type PlaceInfo = {
-  lat: number | null;
-  lng: number | null;
+  lat: number;
+  lng: number;
   address: string;
-};
-
-// This function transforms the backend response into a Google-like format
-function transformItinerary(data: ItineraryResponse): ItineraryV2[] {
-    if (data.v2_itin && data.v2_itin.length > 0) {
-        return data.v2_itin;
-    }
-    // Fallback for V1 Itineraries (transforming them to V2 structure)
-    if (data.lines && data.lines.length > 0) {
-        return data.lines.map(line => {
-            const startStep = line.walk_to_start_polyline ? [{
-                type: 'WALK',
-                duration_seconds: 5 * 60, // approximate
-                distance_meters: 300, // approximate
-                polyline: line.walk_to_start_polyline,
-                start_time: line.start_stop_arrival_time, // This is not perfect
-                end_time: line.start_stop_arrival_time,
-                start_stop_name: data.start?.name || "Point de départ",
-                end_stop_name: line.stops[0]?.name || "Premier arrêt"
-            }] : [];
-
-            const transitStep = {
-                type: 'TRANSIT',
-                duration_seconds: line.ride_eta_min * 60,
-                polyline: "", // V1 doesn't provide a polyline for the whole transit leg
-                start_time: line.start_stop_arrival_time,
-                end_time: line.arrival_time,
-                start_stop_name: line.stops[0]?.name,
-                end_stop_name: line.stops[line.stops.length-1]?.name,
-                line_id: line.line_id,
-                line_name: line.route_name,
-                num_stops: line.stops.length
-            };
-            
-            const endStep = line.walk_to_dest_polyline ? [{
-                type: 'WALK',
-                duration_seconds: 5 * 60, // approximate
-                distance_meters: 300, // approximate
-                polyline: line.walk_to_dest_polyline,
-                start_time: line.arrival_time, // This is not perfect
-                end_time: line.arrival_time,
-                start_stop_name: line.stops[line.stops.length-1]?.name || "Dernier arrêt",
-                end_stop_name: data.destination.name || "Destination"
-            }] : [];
-
-            const steps = [...startStep, transitStep, ...endStep];
-
-            return {
-                duration_seconds: steps.reduce((sum, s) => sum + s.duration_seconds, 0),
-                start_time: steps[0].start_time,
-                end_time: steps[steps.length - 1].end_time,
-                steps: steps,
-            };
-        });
-    }
-
-    return [];
-}
-
+} | null;
 
 export default function ItinerarySearch() {
-  const [startPlace, setStartPlace] = useState<PlaceInfo | null>(null);
-  const [destinationPlace, setDestinationPlace] = useState<PlaceInfo | null>(null);
+  const [startPlace, setStartPlace] = useState<PlaceInfo>(null);
+  const [destinationPlace, setDestinationPlace] = useState<PlaceInfo>(null);
+  const [cityId, setCityId] = useState(1); // Default to Casablanca
 
   const [searchState, setSearchState] = useState<{
     loading: boolean;
@@ -112,23 +30,22 @@ export default function ItinerarySearch() {
 
   const { toast } = useToast();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      start: '',
-      destination: '',
-      city_id: 1, // Default to Casablanca
-    },
-  });
+  const handleSwap = () => {
+      const tempStart = startPlace;
+      setStartPlace(destinationPlace);
+      setDestinationPlace(tempStart);
+  }
 
-  const onSubmit: SubmitHandler<FormValues> = async (data) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!startPlace?.lat || !startPlace?.lng) {
-        toast({ variant: "destructive", title: "Point de départ manquant", description: "Veuillez sélectionner un point de départ valide à partir des suggestions." });
-        return;
+      toast({ variant: "destructive", title: "Point de départ manquant", description: "Veuillez sélectionner un point de départ valide à partir des suggestions." });
+      return;
     }
     if (!destinationPlace?.address) {
-        toast({ variant: "destructive", title: "Destination manquante", description: "Veuillez sélectionner une destination valide à partir des suggestions." });
-        return;
+      toast({ variant: "destructive", title: "Destination manquante", description: "Veuillez sélectionner une destination valide à partir des suggestions." });
+      return;
     }
 
     setSearchState({ loading: true, error: null, results: null });
@@ -137,7 +54,7 @@ export default function ItinerarySearch() {
       start_lat: startPlace.lat.toString(),
       start_lon: startPlace.lng.toString(),
       dest_add: destinationPlace.address,
-      city_id: data.city_id.toString(),
+      city_id: cityId.toString(),
     };
 
     console.log('Sending API request with params:', params);
@@ -151,10 +68,10 @@ export default function ItinerarySearch() {
         throw new Error(errorData.details || 'An unknown error occurred');
       }
 
-      const rawResults: ItineraryResponse = await response.json();
+      const rawResults = await response.json();
       console.log('API response received:', rawResults);
       
-      const transformedResults = transformItinerary(rawResults);
+      const transformedResults = rawResults.v2_itin ?? [];
       console.log('Transformed results:', transformedResults);
 
       setSearchState({ loading: false, error: null, results: transformedResults });
@@ -172,89 +89,51 @@ export default function ItinerarySearch() {
 
   return (
     <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-           <FormField
-            control={form.control}
-            name="city_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ville</FormLabel>
-                <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selectionner une ville" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {CITIES.map((city) => (
-                      <SelectItem key={city.id} value={city.id.toString()}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="start"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Point de départ</FormLabel>
-                <FormControl>
-                   <AutocompleteInput 
-                      placeholder="Adresse de départ" 
-                      {...field} 
-                      onPlaceSelect={(place) => {
-                          field.onChange(place?.formatted_address || '');
-                          setStartPlace({
-                              lat: place?.geometry?.location?.lat() || null,
-                              lng: place?.geometry?.location?.lng() || null,
-                              address: place?.formatted_address || '',
-                          });
-                      }}
-                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="destination"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Destination</FormLabel>
-                <FormControl>
-                    <AutocompleteInput 
-                        placeholder="Adresse de destination" 
-                        {...field}
-                        onPlaceSelect={(place) => {
-                            field.onChange(place?.formatted_address || '');
-                            setDestinationPlace({
-                                lat: place?.geometry?.location?.lat() || null,
-                                lng: place?.geometry?.location?.lng() || null,
-                                address: place?.formatted_address || '',
-                            });
-                        }}
-                    />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={searchState.loading}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className='flex gap-4'>
+            <div className='flex flex-col items-center justify-center gap-1.5 py-2'>
+                <Circle className="h-3 w-3" />
+                <MoreVertical className="h-6 w-6 text-gray-300" />
+                <MapPin className="h-4 w-4 text-red-500" />
+            </div>
+            <div className='flex-grow space-y-2'>
+                <LocationInput
+                    value={startPlace?.address || ''}
+                    onSelect={(place) => setStartPlace(place)}
+                    placeholder="Choose starting point"
+                />
+                <LocationInput
+                    value={destinationPlace?.address || ''}
+                    onSelect={(place) => setDestinationPlace(place)}
+                    placeholder="Choose destination, or click on the map"
+                />
+            </div>
+            <div className="flex items-center justify-center">
+                 <Button type="button" variant="ghost" size="icon" onClick={handleSwap}>
+                    <ArrowRightLeft className="h-5 w-5 text-gray-500" />
+                </Button>
+            </div>
+        </div>
+         <div className="space-y-2">
+            <label className="text-sm font-medium">Ville</label>
+            <Select onValueChange={(value) => setCityId(parseInt(value))} defaultValue={cityId.toString()}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selectionner une ville" />
+                </SelectTrigger>
+              <SelectContent>
+                {CITIES.map((city) => (
+                  <SelectItem key={city.id} value={city.id.toString()}>
+                    {city.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+        </div>
+        <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={searchState.loading}>
             {searchState.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
             Rechercher
-          </Button>
-        </form>
-      </Form>
+        </Button>
+      </form>
       
       {searchState.loading && (
         <div className="flex justify-center p-8 mt-8">
@@ -264,7 +143,7 @@ export default function ItinerarySearch() {
       {searchState.error && (
         <div className="mt-8 text-center text-destructive">
           <p>Erreur: {searchState.error}</p>
-          <Button variant="outline" onClick={() => form.handleSubmit(onSubmit)()} className="mt-4">
+          <Button variant="outline" onClick={handleSubmit} className="mt-4">
             Réessayer
           </Button>
         </div>
