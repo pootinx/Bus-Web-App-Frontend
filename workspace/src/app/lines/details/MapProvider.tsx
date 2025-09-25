@@ -16,7 +16,7 @@ export function MapProvider({ line, stops, itinerary }: MapProviderProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || 'transitsage-map';
 
-  if (!apiKey || apiKey === "PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE") {
+  if (!apiKey) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <Alert variant="destructive" className="w-auto">
