@@ -5,7 +5,6 @@ import { APIProvider, Map } from '@vis.gl/react-google-maps';
 import LineMap from './LineMap';
 import type { BusLine, Stop, ItineraryV2 } from '@/lib/types';
 import { Alert, AlertTitle } from '@/components/ui/alert';
-import getConfig from 'next/config';
 
 type MapProviderProps = {
   line?: BusLine;
@@ -14,8 +13,7 @@ type MapProviderProps = {
 };
 
 export function MapProvider({ line, stops, itinerary }: MapProviderProps) {
-  const { publicRuntimeConfig } = getConfig() || {};
-  const apiKey = publicRuntimeConfig?.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || 'transitsage-map';
 
   if (!apiKey) {
