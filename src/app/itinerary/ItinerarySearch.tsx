@@ -10,6 +10,9 @@ import ItineraryResults from './ItineraryResults';
 import LocationInput from './LocationInput';
 import { CITIES } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { APIProvider } from '@vis.gl/react-google-maps';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 
 type PlaceInfo = {
   lat: number;
@@ -29,6 +32,7 @@ export default function ItinerarySearch() {
   }>({ loading: false, error: null, results: null });
 
   const { toast } = useToast();
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const handleSwap = () => {
       const tempStart = startPlace;
@@ -87,8 +91,17 @@ export default function ItinerarySearch() {
     }
   };
 
+  if (!apiKey) {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Configuration Error</CardTitle></CardHeader>
+            <CardContent><p>Google Maps API Key is missing. Please add it to your environment variables.</p></CardContent>
+        </Card>
+    )
+  }
+
   return (
-    <>
+    <APIProvider apiKey={apiKey} libraries={['places']}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className='flex gap-4'>
             <div className='flex flex-col items-center justify-center gap-1.5 py-2'>
@@ -149,6 +162,6 @@ export default function ItinerarySearch() {
         </div>
       )}
       {searchState.results && <ItineraryResults itineraries={searchState.results} />}
-    </>
+    </APIProvider>
   );
 }
