@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 import { Input } from '@/components/ui/input';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, Search } from 'lucide-react';
 
 type PlaceInfo = {
   lat: number;
