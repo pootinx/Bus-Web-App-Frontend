@@ -29,7 +29,7 @@ export function MapProvider({ line, stops, itinerary }: MapProviderProps) {
   const hasData = line || itinerary;
 
   return (
-    <APIProvider apiKey={apiKey}>
+    <APIProvider apiKey={apiKey} libraries={['places']}>
         <Map
             mapId={mapId}
             className="w-full h-full"
