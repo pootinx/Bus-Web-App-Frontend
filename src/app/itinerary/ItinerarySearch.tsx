@@ -11,15 +11,13 @@ import LocationInput from './LocationInput';
 import { CITIES } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLoadScript } from '@react-google-maps/api';
+import { APIProvider } from '@vis.gl/react-google-maps';
 
 type PlaceInfo = {
   lat: number;
   lng: number;
   address: string;
 } | null;
-
-const libraries: ('places')[] = ['places'];
 
 export default function ItinerarySearch() {
   const [startPlace, setStartPlace] = useState<PlaceInfo>(null);
@@ -33,13 +31,20 @@ export default function ItinerarySearch() {
   }>({ loading: false, error: null, results: null });
 
   const { toast } = useToast();
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: apiKey,
-    libraries,
-    version: 'weekly',
-  });
+  if (!apiKey) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Configuration Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p>Google Maps API key is missing. Please add it to your environment variables.</p>
+            </CardContent>
+        </Card>
+    )
+  }
 
   const handleSwap = () => {
       const tempStart = startPlace;
@@ -68,11 +73,9 @@ export default function ItinerarySearch() {
       city_id: cityId.toString(),
     };
 
-    console.log('Sending API request with params:', params);
-
     try {
       const query = new URLSearchParams(params).toString();
-      const response = await fetch(`/api/itinerary/route?${query}`);
+      const response = await fetch(`/api/itinerary?${query}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -80,10 +83,7 @@ export default function ItinerarySearch() {
       }
 
       const rawResults = await response.json();
-      console.log('API response received:', rawResults);
-      
       const transformedResults = rawResults.v2_itin ?? [];
-      console.log('Transformed results:', transformedResults);
 
       setSearchState({ loading: false, error: null, results: transformedResults });
     } catch (error) {
@@ -98,25 +98,8 @@ export default function ItinerarySearch() {
     }
   };
 
-  if (loadError) {
-    return (
-        <Card>
-            <CardHeader><CardTitle>Map Load Error</CardTitle></CardHeader>
-            <CardContent><p>Could not load Google Maps. Please check the console.</p></CardContent>
-        </Card>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-        <div className="flex justify-center p-8 mt-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    );
-  }
-
   return (
-    <>
+    <APIProvider apiKey={apiKey} libraries={['places']}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className='flex gap-4'>
             <div className='flex flex-col items-center justify-center gap-1.5 py-2'>
@@ -129,11 +112,13 @@ export default function ItinerarySearch() {
                     value={startPlace?.address || ''}
                     onSelect={(place) => setStartPlace(place)}
                     placeholder="Choose starting point"
+                    isLoaded={true}
                 />
                 <LocationInput
                     value={destinationPlace?.address || ''}
                     onSelect={(place) => setDestinationPlace(place)}
                     placeholder="Choose destination, or click on the map"
+                    isLoaded={true}
                 />
             </div>
             <div className="flex items-center justify-center">
@@ -171,12 +156,12 @@ export default function ItinerarySearch() {
       {searchState.error && (
         <div className="mt-8 text-center text-destructive">
           <p>Erreur: {searchState.error}</p>
-          <Button variant="outline" onClick={handleSubmit} className="mt-4">
+          <Button variant="outline" onClick={() => handleSubmit(new Event('submit') as any)} className="mt-4">
             Réessayer
           </Button>
         </div>
       )}
       {searchState.results && <ItineraryResults itineraries={searchState.results} />}
-    </>
+    </APIProvider>
   );
 }
