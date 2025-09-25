@@ -11,7 +11,7 @@ import LocationInput from './LocationInput';
 import { CITIES } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { APIProvider } from '@vis.gl/react-google-maps';
+import { useMapsLibrary } from '@vis.gl/react-google-maps';
 
 type PlaceInfo = {
   lat: number;
@@ -31,20 +31,7 @@ export default function ItinerarySearch() {
   }>({ loading: false, error: null, results: null });
 
   const { toast } = useToast();
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Configuration Error</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p>Google Maps API key is missing. Please add it to your environment variables.</p>
-            </CardContent>
-        </Card>
-    )
-  }
+  const places = useMapsLibrary('places');
 
   const handleSwap = () => {
       const tempStart = startPlace;
@@ -99,7 +86,7 @@ export default function ItinerarySearch() {
   };
 
   return (
-    <APIProvider apiKey={apiKey} libraries={['places']}>
+    <div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className='flex gap-4'>
             <div className='flex flex-col items-center justify-center gap-1.5 py-2'>
@@ -112,13 +99,13 @@ export default function ItinerarySearch() {
                     value={startPlace?.address || ''}
                     onSelect={(place) => setStartPlace(place)}
                     placeholder="Choose starting point"
-                    isLoaded={true}
+                    isLoaded={!!places}
                 />
                 <LocationInput
                     value={destinationPlace?.address || ''}
                     onSelect={(place) => setDestinationPlace(place)}
                     placeholder="Choose destination, or click on the map"
-                    isLoaded={true}
+                    isLoaded={!!places}
                 />
             </div>
             <div className="flex items-center justify-center">
@@ -162,6 +149,6 @@ export default function ItinerarySearch() {
         </div>
       )}
       {searchState.results && <ItineraryResults itineraries={searchState.results} />}
-    </APIProvider>
+    </div>
   );
 }
