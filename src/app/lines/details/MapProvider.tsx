@@ -14,13 +14,13 @@ type MapProviderProps = {
 
 export function MapProvider({ line, stops, itinerary }: MapProviderProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || 'transitsage-map';
+  const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID;
 
-  if (!apiKey) {
+  if (!apiKey || !mapId) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <Alert variant="destructive" className="w-auto">
-          <AlertTitle>Clé API Google Maps manquante</AlertTitle>
+          <AlertTitle>Clé API ou ID de carte Google Maps manquant</AlertTitle>
         </Alert>
       </div>
     );
