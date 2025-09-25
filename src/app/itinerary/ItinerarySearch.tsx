@@ -38,6 +38,7 @@ export default function ItinerarySearch() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
     libraries,
+    version: 'weekly',
   });
 
   const handleSwap = () => {
